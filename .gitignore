@@ -7,6 +7,7 @@
 # Allow only these file types
 !*.py
 !*.txt
+!*.md
 
 # Always allow the gitignore itself
 !.gitignore
