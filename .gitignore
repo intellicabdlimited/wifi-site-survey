@@ -1,0 +1,12 @@
+# Ignore everything by default
+*
+
+# But allow folders (so Git can traverse)
+!*/
+
+# Allow only these file types
+!*.py
+!*.txt
+
+# Always allow the gitignore itself
+!.gitignore
