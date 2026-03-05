@@ -15,7 +15,9 @@ WIFI SITE SURVEY/
 ├── app.py                 # Main entry point / runner
 ├── docx_extractor.py      # Extracts content from .docx reports
 ├── ocr_csv_generator.py   # OCR + CSV generation utilities
+├── parameter_vs_range.py 
 └── requirements.txt       # Python dependencies
+
 ````
 
 ## Quick Start
