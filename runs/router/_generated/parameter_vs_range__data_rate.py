@@ -267,7 +267,7 @@ PARAM_PRESETS = {
 # -------------------------------------------------
 # ---- USER SETTINGS (pick one preset name)
 # -------------------------------------------------
-PARAM_NAME = "Throughput"  # <-- change this (must match a key in PARAM_PRESETS)
+PARAM_NAME = 'Data Rate'
 
 # Optional overrides (leave None to use preset defaults)
 BANDS_OVERRIDE = None              # e.g. ["5GHz"] or ["2.4GHz","5GHz"]
@@ -303,8 +303,8 @@ USE_3D = False
 
 # Input/output folders (Colab)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.environ.get("RVR_INPUT_DIR", os.path.join(SCRIPT_DIR, "inputs"))
-OUT_BASE  = OUT_BASE_OVERRIDE or os.environ.get("RVR_OUT_BASE") or os.path.join(SCRIPT_DIR, f"rvr_{PARAM_KEY}")
+INPUT_DIR = 'runs/router/rvr_inputs/data_rate'
+OUT_BASE = 'runs/router/rvr_outputs/data_rate'
 
 os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUT_BASE, exist_ok=True)
@@ -1337,8 +1337,13 @@ try:
     from IPython.display import Image as IPyImage
 except Exception:
     IPyImage = None
-for p in ring_paths:
-    display(IPyImage(filename=p))
+
+if IPyImage is not None:
+    for p in ring_paths:
+        display(IPyImage(filename=p))
+else:
+    for p in ring_paths:
+        print("[INFO] Ring preview saved:", p)
 
 """## Build curves from CSVs (distance bins)"""
 
@@ -2413,7 +2418,7 @@ SRC_DIR = OUT_BASE  # e.g., "/content/rvr_data_rate" or "/content/rvr_signal_str
 
 # Fixed zip name (same every run -> overwrites)
 ZIP_NAME = "rvr_full_output.zip"
-ZIP_PATH = os.path.join(SCRIPT_DIR, ZIP_NAME)
+ZIP_PATH = 'runs/router/rvr_full_output_data_rate.zip'
 
 def zip_folder_overwrite(src_dir: str, zip_path: str):
     src_dir = os.path.abspath(src_dir)
