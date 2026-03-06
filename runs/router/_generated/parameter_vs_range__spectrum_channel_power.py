@@ -267,7 +267,7 @@ PARAM_PRESETS = {
 # -------------------------------------------------
 # ---- USER SETTINGS (pick one preset name)
 # -------------------------------------------------
-PARAM_NAME = "Throughput"  # <-- change this (must match a key in PARAM_PRESETS)
+PARAM_NAME = 'Spectrum Channel Power'
 
 # Optional overrides (leave None to use preset defaults)
 BANDS_OVERRIDE = None              # e.g. ["5GHz"] or ["2.4GHz","5GHz"]
@@ -303,8 +303,8 @@ USE_3D = False
 
 # Input/output folders (Colab)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_DIR = os.environ.get("RVR_INPUT_DIR", os.path.join(SCRIPT_DIR, "inputs"))
-OUT_BASE  = OUT_BASE_OVERRIDE or os.environ.get("RVR_OUT_BASE") or os.path.join(SCRIPT_DIR, f"rvr_{PARAM_KEY}")
+INPUT_DIR = 'runs/router/rvr_inputs/spectrum_channel_power'
+OUT_BASE = 'runs/router/rvr_outputs/spectrum_channel_power'
 
 os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUT_BASE, exist_ok=True)
@@ -2418,7 +2418,7 @@ SRC_DIR = OUT_BASE  # e.g., "/content/rvr_data_rate" or "/content/rvr_signal_str
 
 # Fixed zip name (same every run -> overwrites)
 ZIP_NAME = "rvr_full_output.zip"
-ZIP_PATH = os.path.join(SCRIPT_DIR, ZIP_NAME)
+ZIP_PATH = 'runs/router/rvr_full_output_spectrum_channel_power.zip'
 
 def zip_folder_overwrite(src_dir: str, zip_path: str):
     src_dir = os.path.abspath(src_dir)
