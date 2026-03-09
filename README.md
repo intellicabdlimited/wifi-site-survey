@@ -8,8 +8,6 @@ This project automates a three-step workflow for WiFi site survey analysis:
 2. Run OCR on survey heatmaps and convert them into CSV outputs
 3. Run parameter-vs-range analysis using ESX files, CSV outputs, and optional site geometry
 
-The goal is to move the work from a notebook-style process into a cleaner local workflow that can run inside VS Code with a Streamlit interface.
-
 The app is designed for practical use. You upload your files, run each step in order, and download the generated outputs. It also keeps each run inside its own folder so results are easier to trace and review later.
 
 ---
@@ -477,7 +475,7 @@ Typical output:
 ```bash
 git clone <your-repo>
 cd <your-repo>
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install streamlit pytesseract opencv-python-headless scipy pandas matplotlib seaborn numpy python-docx
 sudo apt install tesseract-ocr
