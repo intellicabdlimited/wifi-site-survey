@@ -1,0 +1,10 @@
+numpy
+pandas
+matplotlib
+seaborn
+scipy
+pillow
+pytesseract
+python-docx
+opencv-python-headless
+ipython
