@@ -1337,8 +1337,13 @@ try:
     from IPython.display import Image as IPyImage
 except Exception:
     IPyImage = None
-for p in ring_paths:
-    display(IPyImage(filename=p))
+
+if IPyImage is not None:
+    for p in ring_paths:
+        display(IPyImage(filename=p))
+else:
+    for p in ring_paths:
+        print("[INFO] Ring preview saved:", p)
 
 """## Build curves from CSVs (distance bins)"""
 
