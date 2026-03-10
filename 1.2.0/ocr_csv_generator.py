@@ -1850,11 +1850,17 @@ def extract_hexagons(
 
         patch = heatmap_rgb[y : y + h, x : x + w]
 
-        pixels = patch[m_er]
-        if pixels.size == 0:
-            pixels = patch[m.astype(bool)]
+        cx_i = int(round(cx))
+        cy_i = int(round(cy))
+        rad = max(3, int(min(w, h) * 0.12))
 
-        med_rgb = np.median(pixels, axis=0)
+        x1 = max(0, cx_i - rad)
+        x2 = min(heatmap_rgb.shape[1], cx_i + rad + 1)
+        y1 = max(0, cy_i - rad)
+        y2 = min(heatmap_rgb.shape[0], cy_i + rad + 1)
+
+        patch_center = heatmap_rgb[y1:y2, x1:x2]
+        med_rgb = np.median(patch_center.reshape(-1, 3), axis=0)
 
         records.append(
             {
@@ -1944,11 +1950,13 @@ def map_hex_to_numeric(df_hex: pd.DataFrame, model: NumericScaleModel, debug_dir
         bin_idx = np.clip(bin_idx, 0, len(steps) - 1)
 
         out["scale_idx"] = bin_idx.astype(int)
-        out["value_mid"] = val
+        out["raw_value"] = val
+
         out = out.reset_index(drop=True).join(
-            steps.loc[out["scale_idx"], ["step_rgb", "value_min", "value_max"]].reset_index(drop=True)
+            steps.loc[out["scale_idx"], ["step_rgb", "value_min", "value_max", "value_mid"]].reset_index(drop=True)
         )
-        out.loc[out["rejected"], ["value_min", "value_max", "value_mid"]] = np.nan
+
+        out.loc[out["rejected"], ["value_min", "value_max", "value_mid", "raw_value"]] = np.nan
 
     if DEBUG and debug_dir:
         rej_rate = float(out["rejected"].mean()) if len(out) else 0.0
@@ -2273,6 +2281,29 @@ def scan_heatmaps_extracted(extracted_root: str) -> list[str]:
 # ============================================================
 # Main Streamlit/VS Code entrypoint
 # ============================================================
+
+def snap_uniform_hex_colors(df_hex: pd.DataFrame, de_thresh=3.0, min_frac=0.95):
+    if df_hex.empty:
+        return df_hex, False
+
+    rgb = df_hex[["r", "g", "b"]].to_numpy().astype(np.uint8)
+    lab = rgb_to_lab(rgb)
+
+    center_lab = np.median(lab, axis=0)
+    d = np.linalg.norm(lab - center_lab, axis=1)
+
+    frac_close = float(np.mean(d <= de_thresh))
+
+    if frac_close >= min_frac:
+        rgb_med = np.median(rgb, axis=0).round().astype(np.uint8)
+        out = df_hex.copy()
+        out["r"] = int(rgb_med[0])
+        out["g"] = int(rgb_med[1])
+        out["b"] = int(rgb_med[2])
+        return out, True
+
+    return df_hex, False
+
 def run_ocr_generate_csv(
     extracted_root: str,
     csv_out_root: str,
@@ -2331,6 +2362,12 @@ def run_ocr_generate_csv(
                 df_hex, _ = extract_hexagons(hm_rgb)
 
             df_hex = assign_row_major_ids(df_hex)
+
+            df_hex, snapped_uniform = snap_uniform_hex_colors(df_hex, de_thresh=3.0, min_frac=0.95)
+
+            if DEBUG and hm_debug_dir:
+                with open(hm_debug_dir / f"{tag}uniform_snap.json", "w", encoding="utf-8") as f:
+                    json.dump({"snapped_uniform": bool(snapped_uniform)}, f, indent=2)
 
             out_csv = out_dir / f"{hm_stem}_output.csv"
 
