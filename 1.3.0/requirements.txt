@@ -1,0 +1,11 @@
+streamlit
+python-docx
+pillow
+pytesseract
+opencv-python-headless
+numpy
+pandas
+scipy
+matplotlib
+seaborn
+requests
