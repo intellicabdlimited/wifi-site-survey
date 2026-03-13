@@ -12,6 +12,7 @@ runs/
 !*.py
 !*.txt
 !*.md
+!charts/
 
 # Always allow the gitignore itself
 !.gitignore
