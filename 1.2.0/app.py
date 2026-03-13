@@ -7,6 +7,8 @@ import zipfile
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional
+from charts import render_mesh_compare_apex_dashboard, render_rvr_apex_dashboard
+
 
 import streamlit as st
 
@@ -119,6 +121,7 @@ RUNS_DIR = Path("runs")
 RUNS_DIR.mkdir(exist_ok=True)
 
 PARAM_SCRIPT = Path("parameter_vs_range.py")
+COMPARE_SCRIPT = Path("comparison.py")
 
 PARAM_FOLDER_TO_DISPLAY: Dict[str, str] = {
     "signal_strength": "Signal Strength",
@@ -143,20 +146,11 @@ PARAM_DISPLAY_TO_FOLDER: Dict[str, str] = {
 }
 ALL_PARAM_DISPLAY_OPTIONS = [
     "Signal Strength",
-    "Secondary Signal Strength",
-    "Tertiary Signal Strength",
     "SNR",
-    "Noise",
     "Data Rate",
     "Throughput",
     "Channel Utilization",
-    "Channel Interference",
-    "Channel Width",
     "Spectrum Channel Power",
-    "Network Health",
-    "Network Issues",
-    "Number of APs",
-    "Number of Access Points",
 ]
 
 
@@ -365,6 +359,11 @@ def collect_plot_pngs(out_dir: Path) -> List[Path]:
             pngs.extend(sorted(p.rglob("*.png")))
     return pngs
 
+def collect_compare_plot_pngs(out_dir: Path) -> List[Path]:
+    if not out_dir.exists():
+        return []
+    return sorted(out_dir.rglob("*.png"))
+
 
 def patch_parameter_script(
     source_script: Path,
@@ -411,6 +410,15 @@ def patch_parameter_script(
     patched_script.write_text(text, encoding="utf-8")
     return patched_script
 
+def patch_comparison_script(
+    source_script: Path,
+    patched_script: Path,
+) -> Path:
+    text = source_script.read_text(encoding="utf-8", errors="ignore")
+    patched_script.parent.mkdir(parents=True, exist_ok=True)
+    patched_script.write_text(text, encoding="utf-8")
+    return patched_script
+
 
 # -----------------------------
 # Header
@@ -451,12 +459,14 @@ csv_root_dir = current_router_dir / "csv_outputs" if current_router_dir else Non
 esx_input_dir = current_router_dir / "esx_inputs" if current_router_dir else None
 rvr_inputs_root = current_router_dir / "rvr_inputs" if current_router_dir else None
 rvr_outputs_root = current_router_dir / "rvr_outputs" if current_router_dir else None
+compare_outputs_root = current_router_dir / "compare_outputs" if current_router_dir else None
 
 chips = []
 chips.append(f"Router: {router_name}" if router_name else "Router: —")
 chips.append(f"Extracted images: {count_files(extracted_dir, exts={'.png','.jpg','.jpeg','.webp','.bmp','.tif','.tiff'})}")
 chips.append(f"CSV metrics: {len(discover_metric_dirs(csv_root_dir)) if csv_root_dir and csv_root_dir.exists() else 0}")
 chips.append(f"RVR outputs: {len([p for p in (rvr_outputs_root.iterdir() if rvr_outputs_root and rvr_outputs_root.exists() else []) if p.is_dir()])}")
+chips.append(f"Compare outputs: {len([p for p in (compare_outputs_root.iterdir() if compare_outputs_root and compare_outputs_root.exists() else []) if p.is_dir()])}")
 
 st.markdown(
     '<div class="chips">' + "".join([f'<div class="chip">{c}</div>' for c in chips]) + "</div>",
@@ -498,7 +508,7 @@ with col1:
         also_master_zip = st.checkbox("Create one master ZIP", value=False, key="extract_master_zip")
         offer_extracted_zip = st.checkbox("Offer extracted ZIP download", value=False, key="extract_offer_zip")
 
-    run_extract = st.button("Run extraction", use_container_width=True, key="run_extract_btn")
+    run_extract = st.button("Run extraction", width="stretch", key="run_extract_btn")
 
     if run_extract:
         working_router = router_name or guess_router_from_docx(docx_files)
@@ -516,7 +526,7 @@ with col1:
         extracted = reset_dir(run_dir / "extracted")
 
         # Clear downstream folders too, so same-router reruns don't keep stale OCR/RvR data
-        for downstream in ["csv_outputs", "rvr_inputs", "rvr_outputs"]:
+        for downstream in ["csv_outputs", "rvr_inputs", "rvr_outputs", "compare_inputs", "compare_outputs"]:
             p = run_dir / downstream
             if p.exists():
                 shutil.rmtree(p)
@@ -546,7 +556,7 @@ with col1:
                 data=data,
                 file_name=f"{working_router}_extracted.zip",
                 mime="application/zip",
-                use_container_width=True,
+                width="stretch",
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -570,7 +580,7 @@ with col2:
     extracted_ready = bool(extracted_dir and extracted_dir.exists())
     if not extracted_ready:
         st.info("Choose a router folder and complete Step 1 first.")
-        st.button("Run OCR + CSV generation", disabled=True, use_container_width=True, key="disabled_ocr")
+        st.button("Run OCR + CSV generation", disabled=True, width="stretch", key="disabled_ocr")
     else:
         max_heatmaps = st.number_input("Max heatmaps (0 = no limit)", min_value=0, value=0, step=1, key="ocr_max_heatmaps")
 
@@ -578,7 +588,7 @@ with col2:
             debug = st.checkbox("Debug mode", value=False, key="ocr_debug")
             offer_csv_zip = st.checkbox("Offer CSV ZIP download", value=True, key="ocr_offer_zip")
 
-        run_ocr = st.button("Run OCR + CSV generation", use_container_width=True, key="run_ocr_btn")
+        run_ocr = st.button("Run OCR + CSV generation", width="stretch", key="run_ocr_btn")
 
         if run_ocr:
             assert current_router_dir is not None
@@ -623,7 +633,7 @@ with col2:
                     data=data,
                     file_name=f"{router_name}_csv_outputs.zip",
                     mime="application/zip",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -723,7 +733,7 @@ else:
         show_full_logs = st.checkbox("Show full logs", value=False, key="rvr_show_logs")
         offer_rvr_zip = st.checkbox("Offer RvR ZIP download", value=True, key="rvr_offer_zip")
 
-    run_rvr = st.button("Run Parameter vs Range", use_container_width=True, key="run_rvr_btn")
+    run_rvr = st.button("Run Parameter vs Range", width="stretch", key="run_rvr_btn")
 
     if run_rvr:
         working_router = router_name or guess_router_from_esx(esx_files, master_choice)
@@ -868,7 +878,7 @@ else:
                 data=final_zip.read_bytes(),
                 file_name=final_zip.name,
                 mime="application/zip",
-                use_container_width=True,
+                width="stretch",
             )
 
         pngs = collect_plot_pngs(metric_rvr_out)
@@ -878,19 +888,267 @@ else:
                 cols = st.columns(3)
                 for i, p in enumerate(show):
                     with cols[i % 3]:
-                        st.image(str(p), caption=p.name, use_container_width=True)
+                        st.image(str(p), caption=p.name, width="stretch")
         else:
             st.caption("No plot previews were found yet in plots_percent / plots_actual.")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-
-# -----------------------------
-# Session tools
-# -----------------------------
 st.write("")
-with st.expander("Session tools", expanded=False):
-    if st.button("Clear session state", use_container_width=True):
-        for key in ["router_name", "last_ocr_result", "last_rvr_result"]:
-            st.session_state.pop(key, None)
-        st.rerun()
+
+# if current_router_dir is not None and rvr_outputs_root is not None:
+#     render_rvr_apex_dashboard(current_router_dir, rvr_outputs_root)
+# else:
+#     st.markdown('<div class="card">', unsafe_allow_html=True)
+#     st.markdown(
+#         """
+#         <div class="card-title">
+#           <h2><span class="step">Step 4</span> Interactive ApexCharts</h2>
+#         </div>
+#         <div class="subtle">Choose or load a router folder first.</div>
+#         """,
+#         unsafe_allow_html=True,
+#     )
+#     st.markdown("</div>", unsafe_allow_html=True)
+
+
+st.write("")
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.markdown(
+    """
+<div class="card-title">
+  <h2><span class="step">Step 4</span> Mesh vs No Mesh Comparison</h2>
+</div>
+<div class="subtle">
+Upload WITH MESH CSVs, WITHOUT MESH CSVs, one shared <code>site_geometry.json</code>, and one or more ESX files.
+Outputs go to <code>runs/&lt;router_name&gt;/compare_outputs/&lt;metric&gt;</code>.
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
+if not COMPARE_SCRIPT.exists():
+    st.error(f"Missing {COMPARE_SCRIPT.name} at project root.")
+else:
+    compare_param_display = st.selectbox(
+        "Metric",
+        ALL_PARAM_DISPLAY_OPTIONS,
+        index=0,
+        key="compare4_param_display",
+    )
+    compare_metric_folder = PARAM_DISPLAY_TO_FOLDER.get(compare_param_display, "signal_strength")
+
+    up_left, up_right = st.columns(2)
+
+    with up_left:
+        compare_with_csvs = st.file_uploader(
+            "Upload WITH MESH CSV(s)",
+            type=["csv"],
+            accept_multiple_files=True,
+            key="compare4_with_csvs",
+        )
+
+    with up_right:
+        compare_without_csvs = st.file_uploader(
+            "Upload WITHOUT MESH CSV(s)",
+            type=["csv"],
+            accept_multiple_files=True,
+            key="compare4_without_csvs",
+        )
+
+    compare_esx_files = st.file_uploader(
+        "Upload ESX file(s)",
+        type=["esx"],
+        accept_multiple_files=True,
+        key="compare4_esx_files",
+    )
+
+    compare_site_geom = st.file_uploader(
+        "Upload site_geometry.json",
+        type=["json"],
+        accept_multiple_files=False,
+        key="compare4_site_geom",
+    )
+
+    with st.expander("Advanced", expanded=False):
+        offer_compare_zip = st.checkbox(
+            "Offer comparison ZIP download",
+            value=True,
+            key="compare4_offer_zip",
+        )
+        show_compare_logs = st.checkbox(
+            "Show full logs",
+            value=False,
+            key="compare4_show_logs",
+        )
+
+    run_compare = st.button(
+        "Run Mesh vs No Mesh Comparison",
+        width="stretch",
+        key="compare4_run_compare_btn",
+    )
+
+    if run_compare:
+        if not router_name:
+            st.error("Choose a router folder name first.")
+            st.stop()
+
+        if not compare_with_csvs:
+            st.error("Upload WITH MESH CSV(s).")
+            st.stop()
+
+        if not compare_without_csvs:
+            st.error("Upload WITHOUT MESH CSV(s).")
+            st.stop()
+
+        if not compare_esx_files:
+            st.error("Upload one or more ESX files.")
+            st.stop()
+
+        if not compare_site_geom:
+            st.error("Upload site_geometry.json.")
+            st.stop()
+
+        run_dir = router_dir(router_name)
+        compare_inputs_root = ensure_dir(run_dir / "compare_inputs")
+        compare_with_dir = reset_dir(compare_inputs_root / "with_mesh" / compare_metric_folder)
+        compare_without_dir = reset_dir(compare_inputs_root / "without_mesh" / compare_metric_folder)
+        compare_outputs_dir = reset_dir(run_dir / "compare_outputs" / compare_metric_folder)
+
+        copied_with = 0
+        copied_without = 0
+
+        for f in compare_with_csvs:
+            write_uploaded_file(f, compare_with_dir / f.name)
+            copied_with += 1
+
+        for f in compare_without_csvs:
+            write_uploaded_file(f, compare_without_dir / f.name)
+            copied_without += 1
+
+        compare_shared_dir = ensure_dir(run_dir / "compare_inputs" / "_shared")
+        compare_esx_store = reset_dir(compare_shared_dir / "esx")
+        site_geom_path = compare_shared_dir / "site_geometry.json"
+
+        for f in compare_esx_files:
+            write_uploaded_file(f, compare_esx_store / f.name)
+
+        write_uploaded_file(compare_site_geom, site_geom_path)
+
+        generated_dir = ensure_dir(run_dir / "_generated")
+        patched_compare_script = generated_dir / f"comparison__{compare_metric_folder}.py"
+        patch_comparison_script(COMPARE_SCRIPT, patched_compare_script)
+
+        compare_zip_path = run_dir / f"mesh_compare_{compare_metric_folder}.zip"
+        compare_log_path = run_dir / f"compare_run_{compare_metric_folder}.log"
+
+        env = os.environ.copy()
+        env["COMPARE_WITH_DIR"] = str(compare_with_dir)
+        env["COMPARE_WITHOUT_DIR"] = str(compare_without_dir)
+        env["COMPARE_OUT_DIR"] = str(compare_outputs_dir)
+        env["COMPARE_ZIP_PATH"] = str(compare_zip_path)
+        env["COMPARE_SITE_GEOM"] = str(site_geom_path)
+        env["COMPARE_ESX_DIR"] = str(compare_esx_store)
+        env["COMPARE_PARAM_NAME"] = compare_param_display
+
+        cmd = [sys.executable, str(patched_compare_script)]
+
+        st.info(f"Running: {' '.join(cmd)}")
+        st.caption(f"With mesh CSVs    = {copied_with}")
+        st.caption(f"Without mesh CSVs = {copied_without}")
+        st.caption(f"Metric            = {compare_param_display}")
+        st.caption(f"Output            = {compare_outputs_dir}")
+
+        with st.spinner("Running mesh vs no mesh comparison..."):
+            proc = subprocess.run(
+                cmd,
+                cwd=str(Path.cwd()),
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+        log_text = (
+            "===== STDOUT =====\n"
+            + (proc.stdout or "")
+            + "\n\n===== STDERR =====\n"
+            + (proc.stderr or "")
+        )
+        compare_log_path.write_text(log_text, encoding="utf-8")
+
+        ok = (proc.returncode == 0)
+        if ok:
+            st.success("Mesh vs no mesh comparison completed successfully.")
+        else:
+            st.error(f"Comparison failed (exit code {proc.returncode}).")
+
+        with st.expander("Logs", expanded=not ok):
+            shown = log_text if show_compare_logs else (log_text[-8000:] if len(log_text) > 8000 else log_text)
+            st.code(shown)
+
+        if offer_compare_zip and compare_zip_path.exists():
+            st.download_button(
+                "Download Comparison ZIP",
+                data=compare_zip_path.read_bytes(),
+                file_name=compare_zip_path.name,
+                mime="application/zip",
+                width="stretch",
+            )
+
+        pngs = collect_compare_plot_pngs(compare_outputs_dir)
+        if pngs:
+            with st.expander("Preview comparison plots", expanded=False):
+                cols = st.columns(3)
+                for i, p in enumerate(pngs[:12]):
+                    with cols[i % 3]:
+                        st.image(str(p), caption=p.name, width="stretch")
+        else:
+            st.caption("No comparison plots were found.")
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("")
+
+if current_router_dir is not None and rvr_outputs_root is not None:
+    render_rvr_apex_dashboard(
+        current_router_dir,
+        rvr_outputs_root,
+        step_label="Step 5A",
+        title="Interactive Graph — RvR",
+        subtle="Reads the curve table generated by <code>parameter_vs_range.py</code> and renders an interactive RvR chart.",
+    )
+else:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="card-title">
+          <h2><span class="step">Step 5A</span> Interactive Graph — RvR</h2>
+        </div>
+        <div class="subtle">Choose or load a router folder first.</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("")
+
+if compare_outputs_root is not None:
+    render_mesh_compare_apex_dashboard(
+        compare_outputs_root,
+        step_label="Step 5B",
+        title="Interactive Graph — Mesh vs No Mesh",
+        subtle="Reads the comparison curve table generated by <code>comparison.py</code> and renders an interactive mesh-vs-no-mesh chart.",
+    )
+else:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="card-title">
+          <h2><span class="step">Step 5B</span> Interactive Graph — Mesh vs No Mesh</h2>
+        </div>
+        <div class="subtle">Choose or load a router folder first.</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
