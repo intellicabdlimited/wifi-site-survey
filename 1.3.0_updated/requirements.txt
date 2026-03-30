@@ -1,0 +1,12 @@
+matplotlib
+numpy
+opencv-python-headless
+pandas
+pillow
+pytesseract
+python-docx
+requests
+scikit-learn
+scipy
+seaborn
+streamlit
