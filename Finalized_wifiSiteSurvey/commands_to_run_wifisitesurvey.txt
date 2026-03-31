@@ -1,0 +1,21 @@
+sudo apt update
+sudo apt install python3-tk
+sudo apt install -y python3 python3-venv python3-pip tesseract-ocr libgl1 libglib2.0-0 curl
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+# Install Ollama for local AI
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Start the Ollama service in one terminal
+ollama serve
+
+# In another terminal, pull a model once
+ollama pull gemma3:4b
+
+# Run the app
+streamlit run app.py
