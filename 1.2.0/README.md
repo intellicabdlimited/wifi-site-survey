@@ -475,6 +475,8 @@ Typical output:
 ```bash
 git clone <your-repo>
 cd <your-repo>
+
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install streamlit pytesseract opencv-python-headless scipy pandas matplotlib seaborn numpy python-docx
