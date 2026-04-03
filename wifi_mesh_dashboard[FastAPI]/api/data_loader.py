@@ -39,20 +39,15 @@ _FILE_RE = re.compile(
 def router_display_name(name: str) -> str:
     """
     Convert any router folder/file name into a readable display label.
-    This is dynamic, so new routers automatically work without hardcoding.
+    This is fully dynamic, so changing folder names automatically updates the UI.
     """
     if not name:
         return ""
 
     label = str(name).strip()
 
-    # remove file extension if someone accidentally passes a filename
     label = re.sub(r"\.[A-Za-z0-9]+$", "", label)
-
-    # replace separators with spaces
     label = label.replace("_", " ").replace("-", " ")
-
-    # collapse repeated spaces
     label = re.sub(r"\s+", " ", label).strip()
 
     return label
