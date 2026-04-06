@@ -1,13 +1,13 @@
-**WiFi Site Survey Automation
+WiFi Site Survey Automation
 
-Overview**
+Overview
 
 WiFi Site Survey Automation is a local Streamlit application for processing Wi-Fi survey deliverables and generating comparative analysis outputs. The project is built around Ekahau-style survey exports and supports the following workflow:
 
 1. Extract heatmap and scale images from DOCX survey reports.
 2. Convert extracted heatmaps into structured CSV data using OCR and color-scale reconstruction.
 3. Generate parameter-vs-range (RvR) plots using ESX geometry and floor alignment.
-4. Compare **with-mesh** and **without-mesh** survey outputs.
+4. Compare with-mesh and without-mesh survey outputs.
 5. Render interactive dashboards for both RvR and mesh comparison outputs.
 6. Generate DOCX-based comparative reports, optionally enriched with a local LLM through Ollama.
 7. Build a local searchable knowledge base for natural-language querying of survey results.
@@ -16,9 +16,9 @@ The application is intended to run locally and keeps all processing on the user�
 
 
 
-** Key Features**
+ Key Features
 
-** 1. DOCX Survey Extraction**
+ 1. DOCX Survey Extraction
 
 The project can extract survey heatmaps and related scale images from DOCX files. It uses caption parsing and filename metadata normalization to identify:
 
@@ -30,8 +30,8 @@ The project can extract survey heatmaps and related scale images from DOCX files
 
 The extraction stage also generates a manifest file that downstream OCR and reporting stages use.
 
-** 2. OCR-Based CSV Generation
-**
+ 2. OCR-Based CSV Generation
+
 The OCR pipeline converts extracted survey images into structured CSV outputs. It supports both:
 
 * numeric scales, such as signal strength, SNR, throughput, and noise,
@@ -45,8 +45,8 @@ The OCR stage performs:
 * hexagon extraction from heatmaps,
 * mapping of detected color regions to numeric or categorical values.
 
-** 3. Range-vs-Parameter Analysis
-**
+ 3. Range-vs-Parameter Analysis
+
 The RvR workflow uses CSV outputs and ESX geometry to calculate distance-aware trends. It produces comparative plots showing how a selected metric behaves with increasing distance from the DUT or AP reference position.
 
 This stage depends on:
@@ -55,8 +55,8 @@ This stage depends on:
 * master and router ESX files,
 * a `site_geometry.json` definition.
 
-** 4. Mesh vs No Mesh Comparison
-**
+ 4. Mesh vs No Mesh Comparison
+
 The comparison workflow takes two sets of survey CSVs:
 
 * with mesh,
@@ -64,19 +64,19 @@ The comparison workflow takes two sets of survey CSVs:
 
 It aligns them using shared site geometry and generates comparative outputs in an RvR-style format.
 
-** 5. Interactive Dashboards
-**
+ 5. Interactive Dashboards
+
 The application includes interactive dashboards implemented in Streamlit and ApexCharts for:
 
 * router-to-router RvR analysis,
 * with-mesh vs without-mesh comparison.
 
-** 6. AI Report Generation
-**
+ 6. AI Report Generation
+
 The report generator creates a DOCX comparative report using generated curve tables and extracted visual assets. If Ollama is available locally, the report can include AI-assisted summary bullets. Without Ollama, the code falls back to deterministic summaries.
 
-** 7. Local Knowledge Base and Chat
-**
+ 7. Local Knowledge Base and Chat
+
 The project can build a local knowledge base from:
 
 * extraction manifests,
@@ -88,21 +88,21 @@ Users can then ask natural-language questions about routers, floors, bands, metr
 
 
 
-** Tech Stack
-**
-* **Python**
-* **Streamlit** for the web UI
-* **OpenCV** for image processing
-* **Tesseract OCR** via `pytesseract`
-* **Pandas / NumPy / SciPy / scikit-learn** for data processing and ranking
-* **python-docx** for report generation
-* **Matplotlib / Seaborn** for plot generation
-* **Ollama** for optional local LLM summaries
+ Tech Stack
+
+* Python
+* Streamlit for the web UI
+* OpenCV for image processing
+* Tesseract OCR via `pytesseract`
+* Pandas / NumPy / SciPy / scikit-learn for data processing and ranking
+* python-docx for report generation
+* Matplotlib / Seaborn for plot generation
+* Ollama for optional local LLM summaries
 
 
 
-** Main Modules
-**
+ Main Modules
+
  `app.py`
 
 Primary Streamlit entry point. It provides the full UI and orchestrates the processing workflow.
@@ -163,8 +163,8 @@ Renders interactive RvR and mesh-comparison dashboards in Streamlit.
 
 
 
-** Supported Metrics
-**
+ Supported Metrics
+
 The code explicitly supports the following metrics:
 
 * Signal Strength
@@ -186,10 +186,10 @@ The application normalizes user-facing metric labels into canonical internal met
 
 
 
-** Application Workflow
-**
-** Step 1 — DOCX to Images + CSV
-**
+ Application Workflow
+
+ Step 1 — DOCX to Images + CSV
+
 The user uploads one or more DOCX survey reports. The application:
 
 * stores the uploaded DOCX files,
@@ -209,16 +209,16 @@ This stage also produces:
 * `_index.csv`
 * `_failed.csv` if OCR jobs fail
 
-** Step 2 — Parameter vs Range
-**
+ Step 2 — Parameter vs Range
+
 Using one selected metric from Step 1, plus ESX files and site geometry, the application runs `parameter_vs_range.py` to generate RvR outputs.
 
 Outputs are stored under:
 
 * `runs/<router_name>/rvr_outputs/<metric>`
 
-** Step 3 — Mesh vs No Mesh Comparison
-**
+ Step 3 — Mesh vs No Mesh Comparison
+
 The user uploads:
 
 * WITH MESH CSVs,
@@ -230,26 +230,26 @@ The application then runs `comparison.py` for the selected metric and stores res
 
 * `runs/<router_name>/compare_outputs/<metric>`
 
-** Step 4A — Interactive Graph: RvR
-**
+ Step 4A — Interactive Graph: RvR
+
 Displays interactive charts generated from Step 2 curve tables.
 
-** Step 4B — Interactive Graph: Mesh vs No Mesh
-**
+ Step 4B — Interactive Graph: Mesh vs No Mesh
+
 Displays interactive charts generated from Step 3 comparison tables.
 
-** Step 5 — AI Report Generator
-**
+ Step 5 — AI Report Generator
+
 Builds a DOCX comparative report from generated outputs and extracted survey assets.
 
-** Step 6 — Local Knowledge Base + Chat
-**
+ Step 6 — Local Knowledge Base + Chat
+
 Builds a local index over survey outputs and answers questions using retrieved context.
 
 
 
-** Project Structure
-**
+ Project Structure
+
 ```text
 .
 ├── app.py
@@ -275,8 +275,8 @@ Builds a local index over survey outputs and answers questions using retrieved c
 
 
 
-** Installation
-**
+ Installation
+
 Create a virtual environment and install dependencies:
 
 ```bash
@@ -286,8 +286,8 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-** Python dependencies
-**
+ Python dependencies
+
 From `requirements.txt`:
 
 * matplotlib
@@ -303,8 +303,8 @@ From `requirements.txt`:
 * seaborn
 * streamlit
 
-** System dependencies
-**
+ System dependencies
+
 The included command notes indicate the project expects:
 
 * Python 3
@@ -315,8 +315,8 @@ The included command notes indicate the project expects:
 
 
 
-** Running the Application
-**
+ Running the Application
+
 Launch the Streamlit app:
 
 ```bash
@@ -327,8 +327,8 @@ The provided helper file `commands_to_run_wifisitesurvey.txt` also documents opt
 
 
 
-** Ollama Integration
-**
+ Ollama Integration
+
 Ollama is not required for the main extraction, OCR, plotting, or comparison workflows. It is used for:
 
 * AI-generated report bullets,
@@ -350,18 +350,18 @@ If Ollama is unavailable, the report and KB logic can fall back to non-AI summar
 
 
 
-** Important Input Types
-**
-** DOCX Reports
-**
+ Important Input Types
+
+ DOCX Reports
+
 The extraction pipeline is designed around DOCX survey reports containing:
 
 * embedded heatmaps,
 * scale images,
 * captions that identify metric, floor, and band.
 
-** ESX Files
-**
+ ESX Files
+
 ESX files are used for:
 
 * master floor plan extraction,
@@ -381,8 +381,8 @@ It can be:
 
 
 
-** Output Structure
-**
+ Output Structure
+
 For each router name, the project creates a run folder:
 
 ```text
@@ -397,24 +397,24 @@ runs/<router_name>/
 └── survey_kb.json
 ```
 
-** Extraction outputs
-**
+ Extraction outputs
+
 Under `extracted/`, the project stores extracted survey assets and manifest CSVs.
 
-** OCR outputs
-**
+ OCR outputs
+
 Under `csv_outputs/<metric>/`, the project stores per-heatmap CSV files plus index and failure logs.
 
-** RvR outputs
-**
+ RvR outputs
+
 Under `rvr_outputs/<metric>/`, the project stores generated plots, ranking data, and curve tables.
 
-** Comparison outputs
-**
+ Comparison outputs
+
 Under `compare_outputs/<metric>/`, the project stores with-mesh vs without-mesh plots and comparison tables.
 
-** Report outputs
-**
+ Report outputs
+
 The AI report generator writes DOCX reports and an accompanying audit file of referenced assets.
 
 
@@ -450,8 +450,8 @@ This allows the final report to include the most relevant extracted survey artif
 
 
 
-** Suggested Use Case
-**
+ Suggested Use Case
+
 This project is most suitable when you have:
 
 * one or more Wi-Fi survey DOCX reports,
@@ -461,8 +461,8 @@ This project is most suitable when you have:
 
 
 
-** Minimal Run Sequence
-**
+ Minimal Run Sequence
+
 A typical user flow is:
 
 1. Start the Streamlit app.
